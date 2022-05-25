@@ -1,0 +1,1 @@
+node_modules\.bin\jest index.test.js --reporters=default --reporters=jest-junit
