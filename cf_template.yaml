@@ -29,10 +29,10 @@ Resources:
       Triggers:
         Webhook: true
         FilterGroups:
-        - - Type: EVENT
-            Pattern: PUSH
-          - Type: HEAD_REF
-            Pattern: ^refs/heads/main$
+          - - Type: EVENT
+              Pattern: PUSH
+            - Type: HEAD_REF
+              Pattern: ^refs/heads/main$
 
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
@@ -77,6 +77,17 @@ Resources:
                   [
                     !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}*",
                   ]
+        - PolicyName: CodeReportAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "codebuild:CreateReportGroup"
+                  - "codebuild:CreateReport"
+                  - "codebuild:UpdateReport"
+                  - "codebuild:BatchPutTestCases"
+                Effect: Allow
+                Resource: ["*"]
 
   #CodeBuildSourceCredential:
   #  Type: AWS::CodeBuild::SourceCredential
