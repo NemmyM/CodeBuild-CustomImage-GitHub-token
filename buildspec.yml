@@ -43,13 +43,13 @@ phases:
       # - command
       # - command
 reports:
-  #report-name-or-arn: 'arn:aws:codebuild:us-east-1:187814605363:report-group/jest-junit'
-  files:
-    - junit.xml
-    - coverage/clover.xml
+  jest-junit:
+    files:
+      - junit.xml
+      - coverage/clover.xml
     #base-directory: location
     #discard-paths: yes
-  file-format: JunitXml
+    file-format: JunitXml
 artifacts:
   files:
     - 'coverage/*'
