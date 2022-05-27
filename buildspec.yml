@@ -43,7 +43,7 @@ phases:
       # - command
       # - command
 reports:
-  report-name-or-arn: sex_baby
+  report-name-or-arn: jest-junit
   files:
     - junit.xml
     - coverage/clover.xml
