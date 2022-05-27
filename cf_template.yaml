@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Codebuild template that pulls automatically from GitHub on commit and generates CodeBuild report.
+
+Parameters:
+  CBBucket:
+    Type: String
+    Default: codebuildbuckshot
+    Description: Location of the artifacts
+  GitHubRepo:
+    Type: String
+    Default: https://github.com/ieee1337/jest.git
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: jest-junit-codereport
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
+      Source:
+        Type: GITHUB
+        Location: !Ref GitHubRepo
+      TimeoutInMinutes: 10
+      Triggers:
+        Webhook: true
+        FilterGroups:
+        - - Type: EVENT
+            Pattern: PUSH
+          - Type: HEAD_REF
+            Pattern: ^refs/heads/main$
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub CodeBuildRole-${AWS::StackName}
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: ["sts:AssumeRole"]
+            Effect: Allow
+            Principal:
+              Service: [codebuild.amazonaws.com]
+        Version: "2012-10-17"
+      Path: /service-role/
+      Policies:
+        - PolicyName: CodebuildS3Access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "s3:PutObject"
+                  - "s3:GetObject"
+                  - "s3:GetObjectVersion"
+                  - "s3:GetBucketAcl"
+                  - "s3:GetBucketLocation"
+                  - "s3:ListBucket"
+                Effect: Allow
+                Resource:
+                  [
+                    !Sub "arn:aws:s3:::${CBBucket}/*",
+                    !Sub "arn:aws:s3:::${CBBucket}",
+                  ]
+        - PolicyName: CodebuildLogAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Effect: Allow
+                Resource:
+                  [
+                    !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${AWS::StackName}*",
+                  ]
+
+  #CodeBuildSourceCredential:
+  #  Type: AWS::CodeBuild::SourceCredential
+  #  Properties:
+  #    AuthType: PERSONAL_ACCESS_TOKEN
+  #    ServerType: GITHUB
+  #    Token: '{{resolve:ssm:/github/ieee1337}}'

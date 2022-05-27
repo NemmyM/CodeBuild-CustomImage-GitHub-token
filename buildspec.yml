@@ -42,14 +42,14 @@ phases:
     #commands:
       # - command
       # - command
-#reports:
-  #report-name-or-arn:
-    #files:
-      # - location
-      # - location
+reports:
+  report-name-or-arn: sex_baby
+  files:
+      - junit.xml
+      - coverage/clover.xml
     #base-directory: location
     #discard-paths: yes
-    #file-format: JunitXml | CucumberJson
+  file-format: JunitXml
 artifacts:
   files:
     - 'coverage/*'
