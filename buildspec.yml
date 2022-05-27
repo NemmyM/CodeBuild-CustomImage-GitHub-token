@@ -45,8 +45,8 @@ phases:
 reports:
   report-name-or-arn: sex_baby
   files:
-      - junit.xml
-      - coverage/clover.xml
+    - junit.xml
+    - coverage/clover.xml
     #base-directory: location
     #discard-paths: yes
   file-format: JunitXml
