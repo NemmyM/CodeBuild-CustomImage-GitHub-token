@@ -34,7 +34,7 @@
     SSMGithubKey:
       A path that'll contain your GitHub personal access token. Stored in AWS Systems Manager>Parameter Store>SecureString
     DockerImage:
-      The name of the builder Docker image, stored in your AWS ECR private repository. Reference ![this](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) guide if this is your first time building and publishing to ECR.
+      The name of the builder Docker image, stored in your AWS ECR private repository. Reference [this](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) guide if this is your first time building and publishing to ECR.
      
    
    ## Summary:
