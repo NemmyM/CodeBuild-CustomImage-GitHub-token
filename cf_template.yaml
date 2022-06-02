@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Codebuild template that pulls automatically from GitHub on commit and generates CodeBuild report.
+Description:
+  This Cloudformation template deploys a Codebuild project for a sample unit test, using Jest. Unlike project from the main branch, this one doesn't automatically trigger on GitHub commit.
+  It uses custom docker image fetched through ECR. The image has git locally installed.
+  Git command on the image uses personal github token to fetch from a private repository. The git token itself is fed using SSM securestring parameter, at the build time.
+  Buildspec is fed to the project inline. 
 
 Parameters:
   CBBucket:
@@ -9,30 +13,65 @@ Parameters:
   GitHubRepo:
     Type: String
     Default: https://github.com/ieee1337/jest.git
+  SSMGithubKey:
+    Type: String
+    Default: "/github/ieee1337"
+  DockerImage:
+    Type: String
+    Default: ubuntu20-node
 
 Resources:
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
-      Name: jest-junit-codereport
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: !Sub |
+          version: 0.2
+
+          env:
+            variables:
+              GITREPO: https://github.com/ieee1337/jest.git
+            parameter-store:
+              GITKEY: /github/ieee1337
+          phases:
+            install:
+              commands:
+                -  git clone https://ieee1337:$GITKEY@github.com/ieee1337/jest.git
+            pre_build:
+              commands:
+              # cd into the cloned repository directory
+                - cd $(echo $GITREPO | cut -d '/' -f 5 | cut -d '.' -f 1)
+            build:
+              commands:
+                - npm ci
+                - npm run test
+          reports:
+            ssm-parameter-fed:
+              files:
+                - junit.xml
+              base-directory: jest
+              file-format: JunitXml
+          artifacts:
+            files:
+              - "junit.xml"
+            base-directory: jest
+
+      Name: !Sub ${AWS::StackName}-codebuild
       ServiceRole: !GetAtt CodeBuildServiceRole.Arn
       Artifacts:
         Type: NO_ARTIFACTS
       Environment:
         Type: LINUX_CONTAINER
         ComputeType: BUILD_GENERAL1_SMALL
-        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0
-      Source:
-        Type: GITHUB
-        Location: !Ref GitHubRepo
-      TimeoutInMinutes: 10
-      Triggers:
-        Webhook: true
-        FilterGroups:
-          - - Type: EVENT
-              Pattern: PUSH
-            - Type: HEAD_REF
-              Pattern: ^refs/heads/main$
+        Image: !Sub 187814605363.dkr.ecr.us-east-1.amazonaws.com/${DockerImage}:latest
+        ImagePullCredentialsType: SERVICE_ROLE
+        EnvironmentVariables:
+          - Value: !Ref GitHubRepo
+            Name: githubRepo
+          - Value: !Ref SSMGithubKey
+            Name: GitToken
+            Type: PARAMETER_STORE
 
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
@@ -88,10 +127,38 @@ Resources:
                   - "codebuild:BatchPutTestCases"
                 Effect: Allow
                 Resource: ["*"]
+        - PolicyName: GitHubAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "ssm:GetParameters"
+                Effect: Allow
+                Resource:
+                  [
+                    !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/github/ieee1337",
+                  ]
+        - PolicyName: ECRAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - "ecr:GetAuthorizationToken"
+                Effect: Allow
+                Resource: ["*"]
+              - Action:
+                  - "ecr:BatchCheckLayerAvailability"
+                  - "ecr:GetDownloadUrlForLayer"
+                  - "ecr:BatchGetImage"
+                  - "ecr:PutImage"
+                  - "ecr:InitiateLayerUpload"
+                  - "ecr:UploadLayerPart"
+                  - "ecr:CompleteLayerUpload"
+                Effect: Allow
+                Resource:
+                  [
+                    !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${DockerImage}*",
+                  ]
 
-  #CodeBuildSourceCredential:
-  #  Type: AWS::CodeBuild::SourceCredential
-  #  Properties:
-  #    AuthType: PERSONAL_ACCESS_TOKEN
-  #    ServerType: GITHUB
-  #    Token: '{{resolve:ssm:/github/ieee1337}}'
+      #ManagedPolicyArns:
+      #  - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
