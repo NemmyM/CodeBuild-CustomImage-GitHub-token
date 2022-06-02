@@ -26,13 +26,13 @@
     Head over to CloudFormation page or use AWS CLI to depoy the cf_template.yaml.  
     During deployment, there's a couple of paramaters that you'll want to adjust:
     
-    CBBucket:
-      S3 bucket. Place for your artifacts. The project itself doesn't use any input artifacts, and the output is just unit test reports. They don't actually get uploaded anywere!
-      The bucket is there just as placeholder, in case you need to extend the project and have permissions to upload onto S3.
-    GitHubRepo:
-      Private/Public GitHub repository that the build image will fetch contents from, using GitHub access token.
-    SSMGithubKey:
-      A path that'll contain your GitHub personal access token. Stored in AWS Systems Manager>Parameter Store>SecureString
+    -  CBBucket:
+    S3 bucket. Place for your artifacts. The project itself doesn't use any input artifacts, and the output is just unit test reports. They don't actually get uploaded anywere!
+    The bucket is there just as placeholder, in case you need to extend the project and have permissions to upload onto S3.
+    -  GitHubRepo:
+    Private/Public GitHub repository that the build image will fetch contents from, using GitHub access token.
+    - SSMGithubKey:
+    A path that'll contain your GitHub personal access token. Stored in AWS Systems Manager>Parameter Store>SecureString
     DockerImage:
       The name of the builder Docker image, stored in your AWS ECR private repository. Reference [this](https://docs.aws.amazon.com/AmazonECR/latest/userguide/docker-push-ecr-image.html) guide if this is your first time building and publishing to ECR.
      
